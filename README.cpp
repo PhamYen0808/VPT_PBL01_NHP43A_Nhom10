@@ -1,4 +1,3 @@
-# PBL1
 #include <iostream>
 #include <string>
 using namespace std;
@@ -107,20 +106,6 @@ public:
         }
         cout << "Khong tim thay xe dang dau trong bai.\n";
     }
-    void xemDanhsachXe () {
-        if (soLuongXe == 0) {
-            cout << "Khong co xe nao dang do trong bai" << tenBai << endl;
-            return;
-        }
-        cout << "Danh sach xe dang do tai bai " <<tenBai <<":\n";
-        for(int i = 0; i < soLuongXe; i++) {
-            cout << i + 1 << "." << bienSoXe[i];
-            if (dangKyDaiHan[i]) {
-                cout << "Dang ky dai han";
-            }
-            cout << endl;
-        }
-    }
 
     bool timXe(string bienSo) {
         for (int i = 0; i < soXeHienTai; i++) {
@@ -132,6 +117,23 @@ public:
         return false;
     }
 
+    void xemDanhSachXe() {
+        if (soXeHienTai == 0) {
+            cout << "Khong co xe nao dang do trong bai " << tenBai << ".\n";
+            return;
+        }
+        cout << "Danh sach xe dang do tai bai " << tenBai << ":\n";
+        for (int i = 0; i < soXeHienTai; i++) {
+            if (cars[i].isParked) {
+                cout << i + 1 << ". " << cars[i].licensePlate;
+                if (cars[i].LongTerm) {
+                    cout << " (Dang ky dai han)";
+                }
+                cout << endl;
+            }
+        }
+    }
+
     void menu() {
         int luaChon;
         do {
@@ -140,6 +142,7 @@ public:
             cout << "2. Xuat xe\n";
             cout << "3. Tinh phi\n";
             cout << "4. Dang ky thue dai han\n";
+            cout << "5. Xem danh sach xe\n";
             cout << "0. Quay lai\n";
             cout << "Chon chuc nang: ";
             cin >> luaChon;
@@ -167,6 +170,9 @@ public:
                 case 4:
                     cout << "Nhap bien so: "; cin >> bienSo;
                     dangKyDaiHan(bienSo);
+                    break;
+                case 5:
+                    xemDanhSachXe();
                     break;
                 case 0:
                     break;
