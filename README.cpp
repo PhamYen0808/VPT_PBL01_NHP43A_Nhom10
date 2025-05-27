@@ -62,21 +62,48 @@ public:
         cout << "Da them xe vao bai: " << bienSo << endl;
         return true;
     }
+bool xuatXe(string bienSo, Timee exitTime) {
+    for (int i = 0; i < soXeHienTai; i++) {
+        if (cars[i].licensePlate == bienSo && cars[i].isParked) {
+            cars[i].exitTime = exitTime;
+            cars[i].isParked = false;
 
-    bool xuatXe(string bienSo, Timee exitTime) {
-        for (int i = 0; i < soXeHienTai; i++) {
-            if (cars[i].licensePlate == bienSo && cars[i].isParked) {
-                cars[i].exitTime = exitTime;
-                cars[i].isParked = false;
-                cout << "Xe " << bienSo << " da xuat khoi bai do.\n";
-                return true;
+            cout << "Xe " << bienSo << " da xuat khoi bai do luc ";
+            cout << cars[i].exitTime.hour << "h" << cars[i].exitTime.minute << "p.\n";
+
+            // Xoá xe ra khỏi mảng bằng cách dịch các phần tử phía sau lên
+            for (int j = i; j < soXeHienTai - 1; j++) {
+                cars[j] = cars[j + 1];
             }
-        }
-        cout << "Khong tim thay xe trong bai.\n";
-        return false;
-    }
 
+            soXeHienTai--; // Giảm số lượng xe đang có
+
+            return true;
+        }
+    }
+    cout << "Khong tim thay xe trong bai.\n";
+    return false;
+    }
     void tinhPhi(string bienSo) {
+        int tongVC=0;
+        for (int i = 0; i < soXeHienTai; i++) {
+            if (cars[i].licensePlate == bienSo) {
+                if (cars[i].LongTerm) {
+                    tongVC =0;
+                }
+                else {
+                    if (cars[i].entryTime.day == 1 || cars[i].entryTime.day == 30){
+                    tongVC = tongVC + 5;
+                    }
+                    if (cars[i].entryTime.day == cars[i].entryTime.month){
+                    tongVC = tongVC + 10;
+                    }
+                    if (cars[i].entryTime.day == 30 && cars[i].entryTime.month == 4 ){
+                    tongVC = tongVC + 10;
+                    }
+                }    
+            }
+            }
         for (int i = 0; i < soXeHienTai; i++) {
             if (cars[i].licensePlate == bienSo) {
                 if (cars[i].LongTerm) {
@@ -102,7 +129,7 @@ public:
                     phi = soNgay * 120000;
                 }
 
-                cout << "Phi cho xe " << bienSo << ": " << phi << " VND\n";
+                cout << "Phi cho xe " << bienSo << ": " << phi * tongVC << " VND\n";
                 return;
             }
         }
