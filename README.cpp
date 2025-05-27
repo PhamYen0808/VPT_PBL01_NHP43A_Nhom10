@@ -20,18 +20,32 @@ public:
         LongTerm = false;
         isParked = false;
     }
+
+    Car(string bienSo, Timee vao, bool daiHan = false) {
+        licensePlate = bienSo;
+        entryTime = vao;
+        LongTerm = daiHan;
+        isParked = true;
+    }
+
+    ~Car() {
+        cout << "Huy xe: " << licensePlate << endl;
+    }
 };
 
-class BaiDo {
-private:
+class BaiDoCoBan {
+protected:
     string tenBai;
     Car cars[20];
     int soXeHienTai;
 
 public:
-    BaiDo(string name = "") {
-        tenBai = name;
-        soXeHienTai = 0;
+    BaiDoCoBan(string name = "") : tenBai(name), soXeHienTai(0) {}
+
+    virtual void menu() = 0;
+
+    virtual ~BaiDoCoBan() {
+        cout << "Giai phong bai do: " << tenBai << endl;
     }
 
     string getTenBai() {
@@ -43,9 +57,7 @@ public:
             cout << "Bai do da day.\n";
             return false;
         }
-        cars[soXeHienTai].licensePlate = bienSo;
-        cars[soXeHienTai].entryTime = entryTime;
-        cars[soXeHienTai].isParked = true;
+        cars[soXeHienTai] = Car(bienSo, entryTime);
         soXeHienTai++;
         cout << "Da them xe vao bai: " << bienSo << endl;
         return true;
@@ -71,6 +83,7 @@ public:
                     cout << "Xe " << bienSo << " da dang ky thue dai han. Khong tinh phi.\n";
                     return;
                 }
+
                 int entryMinutes = cars[i].entryTime.hour * 60 + cars[i].entryTime.minute;
                 int exitMinutes = cars[i].exitTime.hour * 60 + cars[i].exitTime.minute;
                 int soPhut = exitMinutes - entryMinutes;
@@ -133,8 +146,22 @@ public:
             }
         }
     }
+    int demSoXeDangDo() {
+    int dem = 0;
+    for (int i = 0; i < soXeHienTai; i++) {
+        if (cars[i].isParked == true) {
+            dem++;
+        }
+    }
+    return dem;
+    }
+};
 
-    void menu() {
+class BaiDo : public BaiDoCoBan {
+public:
+    BaiDo(string name = "") : BaiDoCoBan(name) {}
+
+    void menu() override {
         int luaChon;
         do {
             cout << "\n--- Quan ly bai: " << tenBai << " ---\n";
@@ -192,7 +219,7 @@ int main() {
     int luaChon;
     do {
         cout << "\n===== MENU QUAN LY BAI DO =====\n";
-        cout << "1. Lien Chieu\n2. Thanh Khe\n3. Son Tra\n4. Hai Chau\n5. Tim xe\n6. Thoat\n";
+        cout << "1. Lien Chieu\n2. Thanh Khe\n3. Son Tra\n4. Hai Chau\n5. Tim xe\n6. Xem so xe moi bai\n7. Thoat\n";
         cout << "Chon chuc nang: ";
         cin >> luaChon;
 
@@ -209,13 +236,19 @@ int main() {
                 if (!found) cout << "Khong tim thay xe trong cac bai.\n";
                 break;
             }
-            case 6:
+            case 6: {
+                cout << "So xe dang do tai Lien Chieu: " << lienChieu.demSoXeDangDo() << endl;
+                cout << "So xe dang do tai Thanh Khe: " << thanhKhe.demSoXeDangDo() << endl;
+                cout << "So xe dang do tai Son Tra: " << sonTra.demSoXeDangDo() << endl;
+                cout << "So xe dang do tai Hai Chau: " << haiChau.demSoXeDangDo() << endl;
+                break;
+            }
+            case 7:
                 cout << "Dang thoat chuong trinh...\n";
                 break;
             default:
                 cout << "Lua chon khong hop le!\n";
         }
     } while (luaChon != 6);
-
     return 0;
 }
