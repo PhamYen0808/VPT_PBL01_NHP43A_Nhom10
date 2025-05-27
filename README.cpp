@@ -1,5 +1,6 @@
 #include <iostream>
 #include <string>
+#include<fstream>
 using namespace std;
 
 struct Timee {
@@ -15,6 +16,7 @@ public:
     Timee exitTime;
     bool LongTerm;
     bool isParked;
+    bool hasLeft;
 
     Car() {
         LongTerm = false;
@@ -51,6 +53,19 @@ public:
     string getTenBai() {
         return tenBai;
     }
+    void ghiXeVaoFile(const Car& car) {
+        ofstream file("ds_xe_vao.txt", ios::app);
+        if (!file) {
+            cout << "Khong the mo file de ghi xe vao.\n";
+            return;
+        }
+        Timee vao = car.entryTime;
+        file << "Xe: " << car.licensePlate << ", Vao: "
+             << vao.hour << ":" << (vao.minute < 10 ? "0" : "") << vao.minute << " "
+             << vao.day << "/" << vao.month << "/" << vao.year << endl;
+        file.close();
+    }
+
 
     bool themXe(string bienSo, Timee entryTime) {
         if (soXeHienTai >= 20) {
@@ -58,11 +73,13 @@ public:
             return false;
         }
         cars[soXeHienTai] = Car(bienSo, entryTime);
+        ghiXeVaoFile(cars[soXeHienTai]);
         soXeHienTai++;
         cout << "Da them xe vao bai: " << bienSo << endl;
         return true;
     }
-bool xuatXe(string bienSo, Timee exitTime) {
+
+    bool xuatXe(string bienSo, Timee exitTime) {
     for (int i = 0; i < soXeHienTai; i++) {
         if (cars[i].licensePlate == bienSo && cars[i].isParked) {
             cars[i].exitTime = exitTime;
@@ -84,6 +101,7 @@ bool xuatXe(string bienSo, Timee exitTime) {
     cout << "Khong tim thay xe trong bai.\n";
     return false;
     }
+
     void tinhPhi(string bienSo) {
         int tongVC=0;
         for (int i = 0; i < soXeHienTai; i++) {
@@ -129,13 +147,14 @@ bool xuatXe(string bienSo, Timee exitTime) {
                     phi = soNgay * 120000;
                 }
 
-                cout << "Phi cho xe " << bienSo << ": " << phi * tongVC << " VND\n";
+                cout << "Phi cho xe " << bienSo << ": " << phi * (100 - tongVC) / 100 << " VND\n";
                 return;
             }
+            else {
+                cout << "Khong tim thay xe " << bienSo << " trong bai.\n";
+            }
         }
-        cout << "Xe khong ton tai trong bai.\n";
     }
-
     void dangKyDaiHan(string bienSo) {
         for (int i = 0; i < soXeHienTai; i++) {
             if (cars[i].licensePlate == bienSo && cars[i].isParked) {
@@ -182,6 +201,45 @@ bool xuatXe(string bienSo, Timee exitTime) {
     }
     return dem;
     }
+    int demSoXeRoiDi () {
+        int dem = 0;
+        for (int i = 0; i < soXeHienTai; i++) {
+            if (!cars[i].isParked && cars[i].hasLeft) {
+                dem++;
+            }
+        }
+        return dem;
+    }
+    int demSoXeDangKyDH () {
+        int dem = 0;
+        for (int i = 0; i < soXeHienTai; i++)  {
+            if(cars[i].LongTerm) {
+                dem++; 
+            }
+        }
+        return dem;
+    }
+    void ghiXeDaRaVaoFile() {
+        ofstream file("ds_xe_roi.txt", ios::app);
+        if (!file) {
+            cout << "Khong the mo file de ghi.\n";
+            return;
+        }
+        file << "===== DANH SACH XE ROI BAI: " << tenBai << " =====\n";
+        for (int i = 0; i < soXeHienTai; i++) {
+            if (!cars[i].isParked && cars[i].hasLeft) {
+                Timee vao = cars[i].entryTime;
+                Timee ra = cars[i].exitTime;
+                file << "Xe: " << cars[i].licensePlate << ", Vao: "
+                     << vao.hour << ":" << (vao.minute < 10 ? "0" : "") << vao.minute << " "
+                     << vao.day << "/" << vao.month << "/" << vao.year << ", Ra: "
+                     << ra.hour << ":" << (ra.minute < 10 ? "0" : "") << ra.minute << " "
+                     << ra.day << "/" << ra.month << "/" << ra.year << endl;
+            }
+        }
+        file.close();
+    }
+
 };
 
 class BaiDo : public BaiDoCoBan {
