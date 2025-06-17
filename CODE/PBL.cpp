@@ -68,6 +68,89 @@ public:
     return (b.hour * 60 + b.minute) - (a.hour * 60 + a.minute);
     }
     
+     // Them xe vao bai do
+    bool themXe(string bienSo, Timee entryTime) {
+        kiemTraVaHuyDatCho(entryTime);
+        for (int i = 0; i < 20; i++) {
+        if (cars[i].licensePlate == bienSo && cars[i].isBooked && !cars[i].isParked) {
+            // Đã đặt chỗ → ghi nhận xe đã đến
+            cars[i].isBooked = false;
+            cars[i].isParked = true;
+            cars[i].entryTime = entryTime;
+            cout << "Xe " << bienSo << " da den dung gio va duoc ghi nhan.\n";
+            ghiXeVaoFile(cars[i]);
+            return true;
+        }
+        }
+        if (soXeHienTai >= 20) {
+            cout << "Bai do da day.\n";
+            return false;
+        }
+        cars[soXeHienTai] = Car(bienSo, entryTime);
+        ghiXeVaoFile(cars[soXeHienTai]);
+        soXeHienTai++;
+        cout << "Da them xe vao bai: " << bienSo << endl;
+        return true;
+    }
+
+    // Xuất xe và tính phí
+    // Nếu xe đã đăng ký thuê dài hạn thì không tính phí
+    // Tích hợp các ưu đãi
+    void xuatXeVaTinhPhi(string bienSo, Timee exitTime) {
+        for (int i = 0; i < soXeHienTai; i++) {
+            if (cars[i].licensePlate == bienSo && cars[i].isParked) {
+                cars[i].exitTime = exitTime;
+                cars[i].isParked = false;
+                cars[i].hasLeft = true;
+
+                if (!cars[i].LongTerm) {
+                    int VC = 0;
+                    if (cars[i].entryTime.day == 1 || cars[i].entryTime.day == 30) VC += 5;
+                    if (cars[i].entryTime.day == cars[i].entryTime.month) VC += 10;
+                    if (cars[i].entryTime.day == 30 && cars[i].entryTime.month == 4) VC += 10;
+
+                    int entryMinutes = cars[i].entryTime.hour * 60 + cars[i].entryTime.minute;
+                    int exitMinutes = cars[i].exitTime.hour * 60 + cars[i].exitTime.minute;
+                    int soPhut = exitMinutes - entryMinutes;
+                    int soGio = soPhut / 60;
+                    int soPhutLe = soPhut % 60;
+                    int phi = 0;
+
+                    if (cars[i].exitTime.day == cars[i].entryTime.day &&
+                        cars[i].exitTime.month == cars[i].entryTime.month &&
+                        cars[i].exitTime.year == cars[i].entryTime.year) {
+                        if (soGio < 5) phi = soGio * 20000 + soPhutLe * 20000 / 60;
+                        else phi = 100000 + (soGio - 5) * 25000 + soPhutLe * 25000 / 60;
+                    } else {
+                        int soNgay = cars[i].exitTime.day - cars[i].entryTime.day;
+                        if (cars[i].exitTime.month != cars[i].entryTime.month ||
+                            cars[i].exitTime.year != cars[i].entryTime.year)
+                            soNgay += 30;
+                        phi = soNgay * 120000;
+                    }
+
+                    int phiSauGiam = phi * (100 - VC) / 100;
+                    tongThuNhap += phiSauGiam;
+                    ghiHoaDon(cars[i], phiSauGiam, VC);
+                    cout << "Phi cho xe " << bienSo << ": " << phiSauGiam
+                         << " VND (Da ap dung " << VC << "% uu dai)\n";
+                } else {
+                    cout << "Xe " << bienSo << " da dang ky thue dai han. Khong tinh phi.\n";
+                }
+
+                ghiXeRaFile(cars[i]);
+                cout << "Xe " << bienSo << " da xuat khoi bai do luc "
+                     << cars[i].exitTime.hour << "h" << cars[i].exitTime.minute << "p.\n";
+
+                for (int j = i; j < soXeHienTai - 1; j++)
+                    cars[j] = cars[j + 1];
+                soXeHienTai--;
+                return;
+            }
+        }
+        cout << "Khong tim thay xe trong bai.\n";
+    }
+    
     // Đặt chỗ trước cho xe
     // Nếu bãi đỗ đã đầy thì không cho đặt chỗ
     bool datChoTruoc(string bienSo, Timee tgDat) {
@@ -147,31 +230,7 @@ public:
         file.close();
     }
 
-    // Them xe vao bai do
-    bool themXe(string bienSo, Timee entryTime) {
-        kiemTraVaHuyDatCho(entryTime);
-        for (int i = 0; i < 20; i++) {
-        if (cars[i].licensePlate == bienSo && cars[i].isBooked && !cars[i].isParked) {
-            // Đã đặt chỗ → ghi nhận xe đã đến
-            cars[i].isBooked = false;
-            cars[i].isParked = true;
-            cars[i].entryTime = entryTime;
-            cout << "Xe " << bienSo << " da den dung gio va duoc ghi nhan.\n";
-            ghiXeVaoFile(cars[i]);
-            return true;
-        }
-        }
-        if (soXeHienTai >= 20) {
-            cout << "Bai do da day.\n";
-            return false;
-        }
-        cars[soXeHienTai] = Car(bienSo, entryTime);
-        ghiXeVaoFile(cars[soXeHienTai]);
-        soXeHienTai++;
-        cout << "Da them xe vao bai: " << bienSo << endl;
-        return true;
-    }
-
+   
     // Kiểm tra thời gian hợp lệ
     // Chỉ cho phép năm 2025 trở lên, tháng từ 1 đến 12, ngày từ 1 đến 31, giờ từ 0 đến 23, phút từ 0 đến 59
     bool thoiGianHopLe(Timee t) {
@@ -199,63 +258,6 @@ public:
         return true;
     }
 
-    // Xuất xe và tính phí
-    // Nếu xe đã đăng ký thuê dài hạn thì không tính phí
-    // Tích hợp các ưu đãi
-    void xuatXeVaTinhPhi(string bienSo, Timee exitTime) {
-        for (int i = 0; i < soXeHienTai; i++) {
-            if (cars[i].licensePlate == bienSo && cars[i].isParked) {
-                cars[i].exitTime = exitTime;
-                cars[i].isParked = false;
-                cars[i].hasLeft = true;
-
-                if (!cars[i].LongTerm) {
-                    int VC = 0;
-                    if (cars[i].entryTime.day == 1 || cars[i].entryTime.day == 30) VC += 5;
-                    if (cars[i].entryTime.day == cars[i].entryTime.month) VC += 10;
-                    if (cars[i].entryTime.day == 30 && cars[i].entryTime.month == 4) VC += 10;
-
-                    int entryMinutes = cars[i].entryTime.hour * 60 + cars[i].entryTime.minute;
-                    int exitMinutes = cars[i].exitTime.hour * 60 + cars[i].exitTime.minute;
-                    int soPhut = exitMinutes - entryMinutes;
-                    int soGio = soPhut / 60;
-                    int soPhutLe = soPhut % 60;
-                    int phi = 0;
-
-                    if (cars[i].exitTime.day == cars[i].entryTime.day &&
-                        cars[i].exitTime.month == cars[i].entryTime.month &&
-                        cars[i].exitTime.year == cars[i].entryTime.year) {
-                        if (soGio < 5) phi = soGio * 20000 + soPhutLe * 20000 / 60;
-                        else phi = 100000 + (soGio - 5) * 25000 + soPhutLe * 25000 / 60;
-                    } else {
-                        int soNgay = cars[i].exitTime.day - cars[i].entryTime.day;
-                        if (cars[i].exitTime.month != cars[i].entryTime.month ||
-                            cars[i].exitTime.year != cars[i].entryTime.year)
-                            soNgay += 30;
-                        phi = soNgay * 120000;
-                    }
-
-                    int phiSauGiam = phi * (100 - VC) / 100;
-                    tongThuNhap += phiSauGiam;
-                    ghiHoaDon(cars[i], phiSauGiam, VC);
-                    cout << "Phi cho xe " << bienSo << ": " << phiSauGiam
-                         << " VND (Da ap dung " << VC << "% uu dai)\n";
-                } else {
-                    cout << "Xe " << bienSo << " da dang ky thue dai han. Khong tinh phi.\n";
-                }
-
-                ghiXeRaFile(cars[i]);
-                cout << "Xe " << bienSo << " da xuat khoi bai do luc "
-                     << cars[i].exitTime.hour << "h" << cars[i].exitTime.minute << "p.\n";
-
-                for (int j = i; j < soXeHienTai - 1; j++)
-                    cars[j] = cars[j + 1];
-                soXeHienTai--;
-                return;
-            }
-        }
-        cout << "Khong tim thay xe trong bai.\n";
-    }
     // Đăng ký thuê dài hạn
     void dangKyDaiHan(string bienSo) {
         for (int i = 0; i < soXeHienTai; i++) {
@@ -469,8 +471,7 @@ public:
             cout << "5. Xem danh sach xe vao\n";
             cout << "6. Xem danh sach xe ra\n";
             cout << "7. Xem thong ke nha xe\n";
-            cout << "8. Hien thi bang do xe\n";
-            cout << "9. Dat cho truoc\n";
+            cout << "8. Dat cho truoc\n";
             cout << "0. Quay lai\n";
             cout << "Chon chuc nang: ";
             cin >> luaChon;
@@ -529,9 +530,6 @@ public:
                     hienThiThongKe();
                     break;
                 case 8:
-                    hienThiBangDoXe();
-                    break;
-                case 9:
                     cout << "Nhap bien so xe muon dat truoc: ";
                     cin >> bienSo;
                     cout << "Nhap thoi gian dat (ngay thang nam): ";
