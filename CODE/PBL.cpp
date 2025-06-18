@@ -35,6 +35,7 @@ public:
         entryTime = vao;
         LongTerm = daiHan;
         isParked = true;
+        isBooked = false;
     }
 
     ~Car() {
@@ -60,6 +61,11 @@ public:
         cout << "Giai phong bai do: " << tenBai << endl;
     }
 
+    // Hàm lấy tổng thu nhập
+    int getTongThuNhap() const {
+    return tongThuNhap;
+}
+    // Hàm lấy tên bãi đỗ
     string getTenBai() {
         return tenBai;
     }
@@ -71,6 +77,14 @@ public:
      // Them xe vao bai do
     bool themXe(string bienSo, Timee entryTime) {
         kiemTraVaHuyDatCho(entryTime);
+        // Kiểm tra biển số đã có trong bãi đỗ chưa
+        for (int i = 0; i < soXeHienTai; i++) {
+            if (cars[i].licensePlate == bienSo && cars[i].isParked) {
+            cout << "Xe " << bienSo << " da co trong bai.\n";
+            return false;
+            }
+        }
+        // Kiểm tra nếu xe đã đặt chỗ trước
         for (int i = 0; i < 20; i++) {
         if (cars[i].licensePlate == bienSo && cars[i].isBooked && !cars[i].isParked) {
             // Đã đặt chỗ → ghi nhận xe đã đến
@@ -86,7 +100,10 @@ public:
             cout << "Bai do da day.\n";
             return false;
         }
+        // Thêm xe mới vào bãi đỗ
         cars[soXeHienTai] = Car(bienSo, entryTime);
+        cars[soXeHienTai].isParked = true;
+        cars[soXeHienTai].isBooked = false;
         ghiXeVaoFile(cars[soXeHienTai]);
         soXeHienTai++;
         cout << "Da them xe vao bai: " << bienSo << endl;
@@ -264,6 +281,8 @@ public:
             if (cars[i].licensePlate == bienSo && cars[i].isParked) {
                 cars[i].LongTerm = true;
                 cout << "Xe " << bienSo << " da dang ky thue dai han. Phi: 1.200.000 VND/thang\n";
+                tongThuNhap += 1200000; // Cộng thêm thu nhập
+                ghiHoaDon(cars[i], 1200000, 0); // Ghi hóa đơn thuê dài hạn
                 return;
             }
         }
@@ -562,24 +581,44 @@ void goiYBaiTrongNhat(BaiDoCoBan& a, BaiDoCoBan& b, BaiDoCoBan& c, BaiDoCoBan& d
 
     cout << "Goi y: Nen chon bai " << baiTot->getTenBai() << " vi it xe nhat!\n";
 }
+
+string currentPIN = "1234"; // mặc định
+
+void docPIN() {
+    ifstream file("pin.txt");
+    if (file) {
+        getline(file, currentPIN);
+        file.close();
+    }
+}
+
+void ghiPIN() {
+    ofstream file("pin.txt");
+    if (file) {
+        file << currentPIN;
+        file.close();
+    }
+}
 BaiDo lienChieu("Lien Chieu");
 BaiDo thanhKhe("Thanh Khe");
 BaiDo sonTra("Son Tra"); 
 BaiDo haiChau("Hai Chau");
+
 int main() {
+    docPIN(); // Đọc PIN từ file nếu có
     cout << "\n--- CHAO MUNG DEN VOI HE THONG QUAN LY BAI DO ---\n";
     cout << "------------------------------------------------------\n";
     int luaChon;
     string pin;
     cout << "Nhap ma PIN de truy cap chuong trinh: ";
     cin >> pin;
-    if (pin != "1234") {
+    if (pin != currentPIN) {
         cout << "Ma PIN sai. Dang thoat...\n";
     return 0;
 }
     do {
         cout << "\n===== MENU QUAN LY BAI DO =====\n";
-        cout << "1. Lien Chieu\n2. Thanh Khe\n3. Son Tra\n4. Hai Chau\n5. Tim xe dang do\n6. Tim xe da roi di\n7. Xem so xe moi bai\n8. Tim bai trong nhat.\n9. Thoat\n";
+        cout << "1. Lien Chieu\n2. Thanh Khe\n3. Son Tra\n4. Hai Chau\n5. Tim xe dang do\n6. Tim xe da roi di\n7. Thong ke moi bai\n8. Tim bai trong nhat.\n9. Doi ma Pin\n10. Thoat\n";
         cout << "Chon chuc nang: ";
         cin >> luaChon;
 
@@ -597,28 +636,52 @@ int main() {
                 break;
             }
             case 6: {
-            string bienSo;
-            cout << "Nhap bien so xe da ra can tim: ";
-            cin >> bienSo;
-            timXeDaRaChung(bienSo, lienChieu);
-            timXeDaRaChung(bienSo, thanhKhe);
-            timXeDaRaChung(bienSo, sonTra);
-            timXeDaRaChung(bienSo, haiChau);
-            break;
-            }
-            case 7: {
-                cout << "So xe dang do tai Lien Chieu: " << lienChieu.demSoXeDangDo() << endl;
-                cout << "So xe dang do tai Thanh Khe: " << thanhKhe.demSoXeDangDo() << endl;
-                cout << "So xe dang do tai Son Tra: " << sonTra.demSoXeDangDo() << endl;
-                cout << "So xe dang do tai Hai Chau: " << haiChau.demSoXeDangDo() << endl;
+                string bienSo;
+                cout << "Nhap bien so xe da ra can tim: ";
+                cin >> bienSo;
+                timXeDaRaChung(bienSo, lienChieu);
+                timXeDaRaChung(bienSo, thanhKhe);
+                timXeDaRaChung(bienSo, sonTra);
+                timXeDaRaChung(bienSo, haiChau);
                 break;
             }
+            case 7: {
+                int doanhThuLienChieu = lienChieu.getTongThuNhap();
+                int doanhThuThanhKhe = thanhKhe.getTongThuNhap();
+                int doanhThuSonTra = sonTra.getTongThuNhap();
+                int doanhThuHaiChau = haiChau.getTongThuNhap();
+                int tongDoanhThu = doanhThuLienChieu + doanhThuThanhKhe + doanhThuSonTra + doanhThuHaiChau;
+
+                cout << "So xe dang do tai Lien Chieu: " << lienChieu.demSoXeDangDo() << ", Doanh thu: " << doanhThuLienChieu << " VND\n";
+                cout << "So xe dang do tai Thanh Khe: " << thanhKhe.demSoXeDangDo() << ", Doanh thu: " << doanhThuThanhKhe << " VND\n";
+                cout << "So xe dang do tai Son Tra: " << sonTra.demSoXeDangDo() << ", Doanh thu: " << doanhThuSonTra << " VND\n";
+                cout << "So xe dang do tai Hai Chau: " << haiChau.demSoXeDangDo() << ", Doanh thu: " << doanhThuHaiChau << " VND\n";
+
+                cout << ">> Tong doanh thu cua tat ca bai: " << tongDoanhThu << " VND\n";
+                break;
+            }   
+            
             case 8: {
                 cout << "\n--- Goi y bai trong nhat ---\n";
                 goiYBaiTrongNhat(lienChieu, thanhKhe, sonTra, haiChau);
                 break;
             }
             case 9: {
+                string oldPIN, newPIN;
+                cout << "Nhap ma PIN hien tai: ";
+                cin >> oldPIN;
+                if (oldPIN != currentPIN) {
+                cout << "Sai ma PIN. Khong the doi.\n";
+                break;
+                }
+                cout << "Nhap ma PIN moi: ";
+                cin >> newPIN;
+                currentPIN = newPIN;
+                ghiPIN();
+                cout << "Da doi ma PIN thanh cong!\n";
+                break;
+            }
+            case 0: {
                 char xacNhan;
                 cout << "Ban co chac chan muon thoat? (y/n): ";
                 cin >> xacNhan;
@@ -632,6 +695,6 @@ int main() {
             default:
                 cout << "Lua chon khong hop le!\n";
         }
-    } while (luaChon != 9);
+    } while (luaChon != 0);
     return 0;
 }
