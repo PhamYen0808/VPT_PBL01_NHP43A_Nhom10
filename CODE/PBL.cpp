@@ -202,26 +202,7 @@ public:
             }
         }
     }
-
-    // // Luu du lieu vao file
-    // void luuDuLieu() {
-    //     ofstream outFile(tenBai + "_data.txt");
-    //     if (!outFile) {
-    //         cout << "Khong mo duoc file de luu du lieu.\n";
-    //         return;
-    //     }
-
-    //     outFile << soXeHienTai << " " << tongThuNhap << "\n";
-    //     for (int i = 0; i < soXeHienTai; i++) {
-    //         Car& c = cars[i];
-    //         outFile << c.licensePlate << " "
-    //                 << c.entryTime.hour << " " << c.entryTime.minute << " "
-    //                 << c.entryTime.day << " " << c.entryTime.month << " " << c.entryTime.year << " "
-    //                 << c.LongTerm << " " << c.isParked << " " << c.hasLeft << "\n";
-    //     }
-    //     outFile.close();
-    // }
-    // Ghi xe vao vao file
+    // Ghi xe vào file
     void ghiXeVaoFile(const Car& car) {
         ofstream file("ds_xe_vao.txt", ios::app);
         if (!file) {
