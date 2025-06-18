@@ -203,24 +203,24 @@ public:
         }
     }
 
-    // Luu du lieu vao file
-    void luuDuLieu() {
-        ofstream outFile(tenBai + "_data.txt");
-        if (!outFile) {
-            cout << "Khong mo duoc file de luu du lieu.\n";
-            return;
-        }
+    // // Luu du lieu vao file
+    // void luuDuLieu() {
+    //     ofstream outFile(tenBai + "_data.txt");
+    //     if (!outFile) {
+    //         cout << "Khong mo duoc file de luu du lieu.\n";
+    //         return;
+    //     }
 
-        outFile << soXeHienTai << " " << tongThuNhap << "\n";
-        for (int i = 0; i < soXeHienTai; i++) {
-            Car& c = cars[i];
-            outFile << c.licensePlate << " "
-                    << c.entryTime.hour << " " << c.entryTime.minute << " "
-                    << c.entryTime.day << " " << c.entryTime.month << " " << c.entryTime.year << " "
-                    << c.LongTerm << " " << c.isParked << " " << c.hasLeft << "\n";
-        }
-        outFile.close();
-    }
+    //     outFile << soXeHienTai << " " << tongThuNhap << "\n";
+    //     for (int i = 0; i < soXeHienTai; i++) {
+    //         Car& c = cars[i];
+    //         outFile << c.licensePlate << " "
+    //                 << c.entryTime.hour << " " << c.entryTime.minute << " "
+    //                 << c.entryTime.day << " " << c.entryTime.month << " " << c.entryTime.year << " "
+    //                 << c.LongTerm << " " << c.isParked << " " << c.hasLeft << "\n";
+    //     }
+    //     outFile.close();
+    // }
     // Ghi xe vao vao file
     void ghiXeVaoFile(const Car& car) {
         ofstream file("ds_xe_vao.txt", ios::app);
@@ -234,7 +234,7 @@ public:
         file.close();
     }
 
-    // Ghi xe ra khoi file
+    // Ghi xe ra vao file
     void ghiXeRaFile(const Car& car) {
         ofstream file("ds_xe_ra.txt", ios::app);
         if (!file) {
@@ -404,7 +404,6 @@ public:
     // Xem danh sách xe đã vào bãi
     void xemXeVaoTuFile() {
         ifstream fileVao("ds_xe_vao.txt");
-        ifstream fileRa("ds_xe_ra.txt");
 
         khungTieuDe("DANH SACH XE DA VAO");
         if (!fileVao) {
@@ -412,18 +411,19 @@ public:
         } else {
             string line;
             while (getline(fileVao, line)) {
-                cout << line << endl;
+            cout << line << endl;
             }
             fileVao.close();
-            //  Mở file bằng Notepad
-            system("start ds_xe_vao.txt");
+            // Mở file bằng Notepad (nếu muốn)
+            //system("start ds_xe_vao.txt");
         }
     }
 
     // Xem danh sách xe đã ra khỏi bãi
-     void xemXeRaTuFile() {
+    void xemXeRaTuFile() {
         ifstream fileRa("ds_xe_ra.txt");
-        khungTieuDe("DANH SACH XE DA VAO");
+
+        khungTieuDe("DANH SACH XE DA RA");
         if (!fileRa) {
             cout << "Khong mo duoc file ds_xe_ra.txt\n";
         } else {
@@ -432,8 +432,7 @@ public:
                 cout << line << endl;
             }
             fileRa.close();
-            //  Mở file bằng Notepad
-            system("start ds_xe_ra.txt");
+            //system("start ds_xe_ra.txt"); (Xem tu file neu can)
         }
     }
     void hienThiThongKe() {
