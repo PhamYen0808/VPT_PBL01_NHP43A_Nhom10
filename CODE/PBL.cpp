@@ -51,9 +51,10 @@ protected:
     Car cars[20];
     int soXeHienTai;
     int tongThuNhap;
+    int soXeDaiHan; // Số xe đã đăng ký thuê dài hạn
 
 public:
-    BaiDoCoBan(string name = "") : tenBai(name), soXeHienTai(0) {} // Khởi tạo tên bãi đỗ và số xe hiện tại
+    BaiDoCoBan(string name = "") : tenBai(name), soXeHienTai(0), soXeDaiHan(0)  {} // Khởi tạo tên bãi đỗ và số xe hiện tại
 
     virtual void menu() = 0;
 
@@ -73,9 +74,19 @@ public:
     int tinhPhutChenhLech(Timee a, Timee b) {
     return (b.hour * 60 + b.minute) - (a.hour * 60 + a.minute);
     }
-    
+    // Đếm số chỗ đang chiếm (sdung trong trường hợp có 19 xe và 1 chỗ đặt trước thì xe khác vào không được)
+    int demSoChoDangChiem() {
+        int dem = 0;
+        for (int i = 0; i < 20; i++) {
+            if (cars[i].isParked || (cars[i].isBooked && !cars[i].isParked)) {
+                dem++;
+            }
+        }
+        return dem;
+    }
      // Them xe vao bai do
     bool themXe(string bienSo, Timee entryTime) {
+        Kiemtra(); // cảnh báo nếu bãi đỗ quá đông (>17)
         kiemTraVaHuyDatCho(entryTime);
         // Kiểm tra biển số đã có trong bãi đỗ chưa
         for (int i = 0; i < soXeHienTai; i++) {
@@ -87,7 +98,8 @@ public:
         // Kiểm tra nếu xe đã đặt chỗ trước
         for (int i = 0; i < 20; i++) {
         if (cars[i].licensePlate == bienSo && cars[i].isBooked && !cars[i].isParked) {
-            // Đã đặt chỗ → ghi nhận xe đã đến
+            // Đã đặt chỗ → ghi nhận xe đã đến1
+
             cars[i].isBooked = false;
             cars[i].isParked = true;
             cars[i].entryTime = entryTime;
@@ -96,12 +108,13 @@ public:
             return true;
         }
         }
-        if (soXeHienTai >= 20) {
+        if (demSoChoDangChiem() >= 20) {
             cout << "Bai do da day.\n";
             return false;
         }
         // Thêm xe mới vào bãi đỗ
-        cars[soXeHienTai] = Car(bienSo, entryTime);
+        cars[soXeHienTai].licensePlate = bienSo;
+        cars[soXeHienTai].entryTime = entryTime;
         cars[soXeHienTai].isParked = true;
         cars[soXeHienTai].isBooked = false;
         ghiXeVaoFile(cars[soXeHienTai]);
@@ -160,7 +173,8 @@ public:
                      << cars[i].exitTime.hour << "h" << cars[i].exitTime.minute << "p.\n";
 
                 for (int j = i; j < soXeHienTai - 1; j++)
-                    cars[j] = cars[j + 1];
+                cars[j] = cars[j + 1];
+                cars[soXeHienTai - 1] = Car(); // reset phần tử cuối
                 soXeHienTai--;
                 return;
             }
@@ -171,7 +185,7 @@ public:
     // Đặt chỗ trước cho xe
     // Nếu bãi đỗ đã đầy thì không cho đặt chỗ
     bool datChoTruoc(string bienSo, Timee tgDat) {
-        if (soXeHienTai >= 20) {
+        if (demSoChoDangChiem() >= 20) {
         cout << "Khong the dat cho. Bai da day.\n";
         return false;
         }
@@ -191,20 +205,28 @@ public:
     // Kiểm tra và hủy đặt chỗ nếu quá hạn
     // Nếu xe đã đặt chỗ quá 30 phút thì hủy đặt chỗ
     void kiemTraVaHuyDatCho(Timee hienTai) {
-        for (int i = 0; i < 20; i++) {
+        for (int i = 0; i < soXeHienTai; i++) {
             if (cars[i].isBooked && !cars[i].isParked) {
-                int chenhlech = tinhPhutChenhLech(cars[i].datChoTime, hienTai);
-                if (chenhlech > 30) {
-                    cout << "Huy dat cho cua xe " << cars[i].licensePlate << " do qua han.\n";
-                    cars[i] = Car(); // xóa thông tin
+                int chenhLech = tinhPhutChenhLech(cars[i].datChoTime, hienTai);
+                if (chenhLech > 30) {
+                    string bienSoHuy = cars[i].licensePlate;  // Lưu biển số trước khi xóa
+
+                    // Xoá xe bằng cách dồn mảng
+                    for (int j = i; j < soXeHienTai - 1; j++)
+                        cars[j] = cars[j + 1];
+                    cars[soXeHienTai - 1] = Car();
                     soXeHienTai--;
+                    i--; // để xét lại vị trí mới bị đẩy lên
+
+                    cout << "Huy dat cho cua xe " << bienSoHuy << " do qua han.\n";
                 }
             }
         }
     }
     // Ghi xe vào file
     void ghiXeVaoFile(const Car& car) {
-        ofstream file("ds_xe_vao.txt", ios::app);
+        string fileName = "ds_xe_vao_" + chuyenDoiTenBai(tenBai) + ".txt";
+        ofstream file(fileName, ios::app);
         if (!file) {
             return;
         }
@@ -215,16 +237,27 @@ public:
         file.close();
     }
 
+    string chuyenDoiTenBai(string ten) {
+        string result = ten;
+        // Đổi thành thường, bỏ khoảng trắng
+        for (char& c : result) {
+            if (c == ' ') c = '_';
+            else c = tolower(c);
+        }
+        return result;
+    }
+
     // Ghi xe ra vao file
     void ghiXeRaFile(const Car& car) {
-        ofstream file("ds_xe_ra.txt", ios::app);
+        string fileName = "ds_xe_ra_" + chuyenDoiTenBai(tenBai) + ".txt";
+        ofstream file(fileName, ios::app);
         if (!file) {
             return;
         }
         Timee ra = car.exitTime;
         file << "Xe: " << car.licensePlate << ", Ra: "
-             << ra.hour << ":" << (ra.minute < 10 ? "0" : "") << ra.minute << " "
-             << ra.day << "/" << ra.month << "/" << ra.year << endl;
+            << ra.hour << ":" << (ra.minute < 10 ? "0" : "") << ra.minute << " "
+            << ra.day << "/" << ra.month << "/" << ra.year << endl;
         file.close();
     }
 
@@ -264,6 +297,7 @@ public:
                 cout << "Xe " << bienSo << " da dang ky thue dai han. Phi: 1.200.000 VND/thang\n";
                 tongThuNhap += 1200000; // Cộng thêm thu nhập
                 ghiHoaDon(cars[i], 1200000, 0); // Ghi hóa đơn thuê dài hạn
+                soXeDaiHan++;
                 return;
             }
         }
@@ -273,22 +307,41 @@ public:
     // Tìm xe đã ra khỏi bãi
     // Tìm kiếm trong file ds_xe_ra.txt
     void timXeDaRa(string bienSo) {
-        ifstream file("ds_xe_ra.txt");
+        string fileName = "ds_xe_ra_" + chuyenDoiTenBai(tenBai) + ".txt";
+        ifstream file(fileName);
         if (!file) {
             cout << "Khong mo duoc file ds_xe_ra.txt\n";
             return;
         }
+
         string line;
         bool found = false;
         while (getline(file, line)) {
-            if (line.find(bienSo) != string::npos) {
-                cout << "Tim thay: " << line << endl;
-                found = true;
+            // Tìm vị trí "Xe: "
+            size_t pos = line.find("Xe: ");
+            if (pos != string::npos) {
+                pos += 4; // nhảy qua "Xe: "
+                size_t commaPos = line.find(",", pos);
+                if (commaPos != string::npos) {
+                    string bienSoTrongFile = line.substr(pos, commaPos - pos);
+                
+                    // Xóa khoảng trắng đầu/cuối (nếu có)
+                    while (!bienSoTrongFile.empty() && bienSoTrongFile.front() == ' ')
+                        bienSoTrongFile.erase(bienSoTrongFile.begin());
+                    while (!bienSoTrongFile.empty() && bienSoTrongFile.back() == ' ')
+                        bienSoTrongFile.pop_back();
+
+                    if (bienSoTrongFile == bienSo) {
+                        cout << "Tim thay: " << line << endl;
+                        found = true;
+                    }
+                }
             }
         }
-        if (!found) cout << "Khong tim thay xe trong danh sach da ra.\n";
-        file.close();
-    }
+
+    if (!found) cout << "Khong tim thay xe trong danh sach da ra.\n";
+    file.close();
+}
 
     // Ghi hóa đơn vào file hoa_don.txt
     void ghiHoaDon(const Car& car, int phiSauGiam, int VC) {
@@ -384,7 +437,8 @@ public:
 
     // Xem danh sách xe đã vào bãi
     void xemXeVaoTuFile() {
-        ifstream fileVao("ds_xe_vao.txt");
+        string fileName = "ds_xe_vao_" + chuyenDoiTenBai(tenBai) + ".txt";
+        ifstream fileVao(fileName);
 
         khungTieuDe("DANH SACH XE DA VAO");
         if (!fileVao) {
@@ -416,23 +470,22 @@ public:
             //system("start ds_xe_ra.txt"); (Xem tu file neu can)
         }
     }
-    void hienThiThongKe() {
-        int dangDo = 0;
-        int daRoi = 0;
-        int daiHan = 0;
+        void hienThiThongKe() {
+            int dangDo = 0;
+            int daRoi = 0;
 
-        for (int i = 0; i < soXeHienTai; i++) {
-            if (cars[i].isParked) dangDo++;
-            else daRoi++;
 
-            if (cars[i].LongTerm) daiHan++;
+            for (int i = 0; i < soXeHienTai; i++) {
+                if (cars[i].isParked) dangDo++;
+                else daRoi++;
+
+            }
+            khungTieuDe("THONG KE CHO BAI " + tenBai);
+            cout << "So xe dang do: " << dangDo << endl;
+            //cout << "So xe da roi di: " << daRoi << endl;
+            cout << "So xe dang thue dai han: " << soXeDaiHan << endl;
+            cout << "Tong thu nhap: " << tongThuNhap << " VND\n";
         }
-        khungTieuDe("THONG KE CHO BAI " + tenBai);
-        cout << "So xe dang do: " << dangDo << endl;
-        cout << "So xe da roi di: " << daRoi << endl;
-        cout << "So xe dang thue dai han: " << daiHan << endl;
-        cout << "Tong thu nhap: " << tongThuNhap << " VND\n";
-    }
 
     // Kiểm tra nếu bãi đỗ đã đông
     bool Kiemtra() { //Caảnh báo nếu bãi đỗ đã đông
@@ -450,7 +503,7 @@ public:
         if (i % 5 == 4) cout << endl;
     }
     cout << "O = Trong   X = Co xe\n";
-} 
+    }    
 };
 
 class BaiDo : public BaiDoCoBan {
@@ -479,26 +532,33 @@ public:
             Timee t;
 
             switch (luaChon) {
-                case 1:
-                    if (Kiemtra()==false)
-                    {char xacNhan;
+                case 1: {
+                    if (!Kiemtra()) {
+                    char xacNhan;
                     cin >> xacNhan;
-                    if (xacNhan != 'n' && xacNhan != 'N') {
-                        cout << "Vui long chon bai khac tu menu chinh.\n";
-                        break;
-                    }}
+                    if (xacNhan == 'n' || xacNhan == 'N') {
+                    cout << "Da huy thao tac.\n";
+                    break;  // Quay lại menu bãi đỗ
+                    }
+                }
+
+                    string bienSo;
+                    Timee t;
+
                     cout << "Nhap bien so: "; 
                     cin >> bienSo;
                     cout << "Nhap thoi gian vao (ngay thang nam): ";
                     cin >> t.day >> t.month >> t.year;
                     cout << "Nhap gio phut (0h-23h): ";
                     cin >> t.hour >> t.minute;
+
                     if (!thoiGianHopLe(t)) {
-                        cout << "Thoi gian khong hop le!\n";
-                        break;
+                    cout << "Thoi gian khong hop le!\n";
+                    break;
                     }   
                     themXe(bienSo, t);
                     break;
+                }
                 case 2:
                     cout << "Nhap bien so: "; cin >> bienSo;
                     cout << "Nhap thoi gian ra (ngay thang nam ): ";
